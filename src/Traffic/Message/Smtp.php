@@ -42,7 +42,7 @@ final class Smtp implements \JsonSerializable
      */
     private function __construct(
         private readonly array $protocol,
-        array $headers,
+        array                  $headers,
     ) {
         $this->setHeaders($headers);
     }
@@ -105,6 +105,7 @@ final class Smtp implements \JsonSerializable
     {
         $clone = clone $this;
         $clone->messages = $messages;
+
         return $clone;
     }
 
@@ -115,6 +116,7 @@ final class Smtp implements \JsonSerializable
     {
         $clone = clone $this;
         $clone->attachments = $attachments;
+
         return $clone;
     }
 
@@ -190,7 +192,10 @@ final class Smtp implements \JsonSerializable
     private function parseContact(string $line): Contact
     {
         if (\preg_match('/^\s*(?<name>.*)\s*<(?<email>.*)>\s*$/', $line, $matches) === 1) {
-            return new Contact($matches['name'] ?: null, $matches['email'] ?: null);
+            return new Contact(
+                $matches['name'] ? \trim($matches['name']) : null,
+                $matches['email'] ? \trim($matches['email']) : null,
+            );
         }
 
         return new Contact(null, $line);
