@@ -43,7 +43,8 @@ final class Smtp implements \JsonSerializable
     private function __construct(
         private readonly array $protocol,
         array                  $headers,
-    ) {
+    )
+    {
         $this->setHeaders($headers);
     }
 
@@ -133,7 +134,7 @@ final class Smtp implements \JsonSerializable
      */
     public function getSender(): array
     {
-        $addrs = \array_unique(\array_merge((array) ($this->protocol['FROM'] ?? []), $this->getHeader('From')));
+        $addrs = \array_unique(\array_merge((array)($this->protocol['FROM'] ?? []), $this->getHeader('From')));
 
         return \array_map([$this, 'parseContact'], $addrs);
     }
@@ -143,7 +144,7 @@ final class Smtp implements \JsonSerializable
      */
     public function getTo(): array
     {
-        return \array_map([$this, 'parseContact'], $this->getHeader('To'));
+        return $this->normalizeAddressList($this->getHeader('To'));
     }
 
     /**
@@ -151,7 +152,7 @@ final class Smtp implements \JsonSerializable
      */
     public function getCc(): array
     {
-        return \array_map([$this, 'parseContact'], $this->getHeader('Cc'));
+        return $this->normalizeAddressList($this->getHeader('Cc'));
     }
 
     /**
@@ -162,7 +163,7 @@ final class Smtp implements \JsonSerializable
      */
     public function getBcc(): array
     {
-        return \array_map([$this, 'parseContact'], $this->protocol['BCC'] ?? []);
+        return $this->normalizeAddressList($this->protocol['BCC'] ?? []);
     }
 
     /**
@@ -170,7 +171,7 @@ final class Smtp implements \JsonSerializable
      */
     public function getReplyTo(): array
     {
-        return \array_map([$this, 'parseContact'], $this->getHeader('Reply-To'));
+        return $this->normalizeAddressList($this->getHeader('Reply-To'));
     }
 
     public function getSubject(): string
@@ -199,5 +200,34 @@ final class Smtp implements \JsonSerializable
         }
 
         return new Contact(null, $line);
+    }
+
+    /**
+     * @param string $line
+     * @return array<Contact>
+     */
+    private function parseDestinationAddress(string $line): array
+    {
+        if (\preg_match_all('/^\s*(?<name>.*)\s*<(?<email>.*)>\s*,*$/', $line, $matches)) {
+            return \array_map(
+                static fn(array $m) => new Contact(
+                    $m['name'] ? \trim($m['name']) : null,
+                    $m['email'] ? \trim($m['email']) : null,
+                ),
+                $matches,
+            );
+        }
+
+        return [];
+    }
+
+    /**
+     * @return array<Contact>
+     */
+    private function normalizeAddressList(array $param): array
+    {
+        return \array_merge(
+            ...\array_map([$this, 'parseDestinationAddress'], $param)
+        );
     }
 }
