@@ -15,6 +15,7 @@ final class SmtpTest extends TestCase
     public function testTo(array $toList, array $expected): void
     {
         $smtp = Smtp::create(
+            protocol: [],
             headers: [
                 'To' => $toList,
                 'CC' => $toList,
