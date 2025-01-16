@@ -163,7 +163,8 @@ final class Smtp implements \JsonSerializable
      */
     public function getBcc(): array
     {
-        return $this->normalizeAddressList($this->protocol['BCC'] ?? []);
+        return \array_map([$this, 'parseContact'], $this->protocol['BCC'] ?? []);
+
     }
 
     /**

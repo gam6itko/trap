@@ -15,12 +15,15 @@ final class SmtpTest extends TestCase
     public function testTo(array $toList, array $expected): void
     {
         $smtp = Smtp::create(
-            protocol: [],
             headers: [
                 'To' => $toList,
+                'CC' => $toList,
+                'Reply-To' => $toList,
             ],
         );
         self::assertEquals($expected, $smtp->getTo());
+        self::assertEquals($expected, $smtp->getCc());
+        self::assertEquals($expected, $smtp->getReplyTo());
     }
 
     public static function dataTo(): iterable
