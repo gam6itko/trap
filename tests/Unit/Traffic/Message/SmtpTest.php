@@ -4,50 +4,51 @@ declare(strict_types=1);
 
 namespace Buggregator\Trap\Tests\Unit\Traffic\Message;
 
-use PHPUnit\Framework\TestCase;
 use Buggregator\Trap\Traffic\Message\Smtp;
+use PHPUnit\Framework\TestCase;
 
 final class SmtpTest extends TestCase
 {
-    public function testTo(): void
+    /**
+     * @dataProvider dataTo
+     */
+    public function testTo(array $toList, array $expected): void
     {
         $smtp = Smtp::create(
             protocol: [],
             headers: [
-                'To' => [
-                    'User1      <user1@inline.com>',
-                    'User2<user2@inline.com>',
-                    'user3@inline.com',
-                ],
+                'To' => $toList,
             ],
         );
-        $toList = $smtp->getTo();
-        self::assertCount(3, $toList);
-        self::assertSame('User1', $toList[0]->name);
-        self::assertSame('user1@inline.com', $toList[0]->email);
-        self::assertSame('User2', $toList[1]->name);
-        self::assertSame('user2@inline.com', $toList[1]->email);
-        self::assertSame(null, $toList[2]->name);
-        self::assertSame('user3@inline.com', $toList[2]->email);
+        self::assertEquals($expected, $smtp->getTo());
     }
 
-    public function testToInlineMulti(): void
+    public static function dataTo(): iterable
     {
-        $smtp = Smtp::create(
-            protocol: [],
-            headers: [
-                'To' => [
-                    'User1 <user1@inline.com>, User2 <user2@inline.com>, user3@inline.com',
-                ],
+        yield [
+            ['Mary Smith <mary@example.net>'],
+            [
+                new Smtp\Contact('Mary Smith', 'mary@example.net'),
             ],
-        );
-        $toList = $smtp->getTo();
-        self::assertCount(3, $toList);
-        self::assertSame('User1', $toList[0]->name);
-        self::assertSame('user1@inline.com', $toList[0]->email);
-        self::assertSame('User2', $toList[1]->name);
-        self::assertSame('user2@inline.com', $toList[1]->email);
-        self::assertSame(null, $toList[2]->name);
-        self::assertSame('user3@inline.com', $toList[2]->email);
+        ];
+
+        yield [
+            ['Mary Smith <mary@x.test>, jdoe@example.org, Who? <one@y.test>'],
+            [
+                new Smtp\Contact('Mary Smith', 'mary@x.test'),
+                new Smtp\Contact(null, 'jdoe@example.org'),
+                new Smtp\Contact('Who?', 'one@y.test'),
+
+            ],
+        ];
+
+        yield [
+            ['A Group:Chris Jones <c@a.test>,joe@where.test,John <jdoe@one.test>;'],
+            [
+                new Smtp\Contact('Chris Jones', 'c@a.test'),
+                new Smtp\Contact(null, 'joe@where.test'),
+                new Smtp\Contact('John', 'jdoe@one.test'),
+            ],
+        ];
     }
 }
